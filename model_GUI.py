@@ -10,7 +10,7 @@ if __name__ == '__main__':
 
     model = mdl.Model(model_size=(width, height))
     model.place(x=0, y=0, width=width, height=height)
-    model.add_object(mdl.Object, model.create_rectangle(0, height, width, height, fill='Black'))
+    model.add_object(mdl.Object, model.create_rectangle(0, height - 10, width, height, fill='Black'))
 
     model.add_object(mdl.MoveableObject, model.create_oval(width // 2, 1, width // 2 + 25, 25))
     model.add_object(mdl.MoveableObject, model.create_oval(width // 2, 25, width // 2 + 50, 50))
