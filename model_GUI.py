@@ -28,7 +28,7 @@ class TestWindow(Toplevel):
         plot_btn.grid(row=0, column=2)
 
     def __plot_data(self):
-        for obj in self.model._objects:
+        for obj in self.model.objects:
             if isinstance(obj, mdl.MoveableObject):
                 obj.plot_data()
 
@@ -42,10 +42,6 @@ if __name__ == '__main__':
 
     model = mdl.Model(model_size=(width, height), resistance=0, tick=0.001)
     model.place(x=0, y=0, width=width, height=height)
-
-
-    add_btn = Button(model, command=lambda: model.add_object(mdl.MoveableObject, model.create_oval(width // 2, 1, width // 2 + 25, 25)))
-    add_btn.pack()
 
     model.add_object(mdl.Object, model.create_rectangle(0, height, width, height + 1, fill='Black'), 2)
 

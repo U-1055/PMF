@@ -81,20 +81,20 @@ class MoveableObject(Object):
 
 class Model(tk.Canvas):
     """Модель"""
-    _objects: list
-    gravity_acceleration: float
-    time_: float
-    tick: float
-    resistance: float
+    __objects: list
+    __gravity_acceleration: float
+    __time_: float
+    __tick: float
+    __resistance: float
 
     def __init__(self, model_size: tuple[int, int], tick: float = 0.001, gravity_acceleration: float = g, resistance: float = 0, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.width = model_size[0]
-        self.height = model_size[1]
-        self.tick = self.time_ = tick
-        self.resistance = resistance
-        self._objects = []
-        self.gravity_acceleration = g
+        self.__width = model_size[0]
+        self.__height = model_size[1]
+        self.__tick = self.time_ = tick
+        self.__resistance = resistance
+        self.__objects = []
+        self.__gravity_acceleration = g
 
         self.processing = True
         thr = Thread(target=self.__event_loop)
@@ -108,20 +108,20 @@ class Model(tk.Canvas):
             if not self.processing:
                 continue
 
-            time.sleep(self.tick)
-            for obj in self._objects:  # Проход по списку объектов
+            time.sleep(self.__tick)
+            for obj in self.__objects:  # Проход по списку объектов
 
                 if isinstance(obj, MoveableObject):  # Проверка и выбор объекта
-                    for other_obj in self._objects:  # Проход по списку объектов
+                    for other_obj in self.__objects:  # Проход по списку объектов
                         if not self.check_coords(obj.coords, other_obj.coords):   # проверка координат объекта
-                            obj.change_coords(self.__get_coord_vector(obj), self.tick, self.time_)
+                            obj.change_coords(self.__get_coord_vector(obj), self.__tick, self.time_)
                             self.create_oval(*self.get_center(obj.coords), *[x + 1 for x in self.get_center(obj.coords)])
-                            if obj.coords[1] > self.height or obj.coords[0] > self.width or obj.coords[0] < 0 or obj.coords[3] < 0:
-                                print(obj, self.width, self.height, obj.coords)
-                                self._objects.remove(obj)
+                            if obj.coords[1] > self.__height or obj.coords[0] > self.__width or obj.coords[0] < 0 or obj.coords[3] < 0:
+                                print(obj, self.__width, self.__height, obj.coords)
+                                self.__objects.remove(obj)
                                 obj.delete()
                                 break
-                self.time_ += self.tick
+                self.time_ += self.__tick
 
     def add_object(self, obj_type, obj_id: int, weight: float = 1) -> Object:
         """
@@ -133,7 +133,7 @@ class Model(tk.Canvas):
         :return:
         """
         obj = obj_type(self, obj_id, weight)
-        self._objects.append(obj)
+        self.__objects.append(obj)
         return obj
 
     def __get_coord_vector(self, obj: MoveableObject) -> Vector:
@@ -149,6 +149,22 @@ class Model(tk.Canvas):
 
     def stop_processing(self):
         self.processing = False
+
+    @property
+    def objects(self):
+        return self.__objects
+
+    @property
+    def time(self):
+        return self.__time_
+
+    @property
+    def resistance(self):
+        return self.__resistance
+
+    @property
+    def gravity_acceleration(self):
+        return self.__gravity_acceleration
 
     @staticmethod
     def check_coords(coords1: list | tuple[int, int, int, int], coords2: tuple[int, int, int, int]) -> bool:
