@@ -13,7 +13,7 @@ class Object:
     id: int
     weight: float
     coords: list[float]
-    forces: list[Vector]
+    forces: set[Vector]
     strength: int  # прочность
 
     def __init__(self, model: tk.Canvas, id_: int, weight: float = 1):
@@ -21,7 +21,7 @@ class Object:
         self.id = id_
         self.weight = weight
         self.coords = self.model.coords(self.id)
-        self.forces = [Vector(0, self.model.gravity_acceleration * weight), -Vector(0, self.model.resistance * weight)]  # ToDo: продумать вопрос с F сопротивления
+        self.forces = set((Vector(0, self.model.gravity_acceleration) * self.weight, self.model.resistance * weight))  # ToDo: продумать вопрос с F сопротивления
         self.strength = 100
 
     def delete(self):
@@ -35,6 +35,8 @@ class Object:
     def stop_force(self, force: Force):
         """Прекращает действие силы на объект (удаляет эту силу из списка)"""
         self.forces.remove(force)
+        del force
+
 
 class MoveableObject(Object):
     """
@@ -53,13 +55,11 @@ class MoveableObject(Object):
         self.speeds = [0]
         self.accelerations = [0]
         self.times = [0.]
+        self.forced = False
 
     def change_coords(self, force: Vector, time_: float):
-        print(self.forces, force.x, force.y)
         self.acceleration = Vector(force.x / self.weight, force.y / self.weight)  # F=ma -> a = F/m
-        print(self.acceleration.y, self.speed.y)
         self.speed = self.acceleration * 0.001 + self.speed  # V = V0 + a*dt
-        print(self.speed.y)
 
         #new_speed = self.speed + force
         self.coords[0] += self.speed[0]
@@ -87,14 +87,17 @@ class MoveableObject(Object):
 
     def prepare_impact(self, obj2: 'Object', time_: float):
         """Стандартная функция обработки столкновений"""
-        obj2_force = self.acceleration * self.weight
-        obj2.forces.append(obj2_force)
-        self.forces.append(-obj2_force)
+        print(self.id, len(self.forces))
+        force = self.acceleration * self.weight
+
+        obj2.forces.add(Force(force.x, force.y, obj2, 2))
+        self.forces.add(Force(-force.x, -force.y, self, 2))
 
         res_force = Vector(0, 0)
         for force in self.forces:
             res_force += force
         self.change_coords(res_force, time_)
+        self.forced = True
 
 
 class Model(tk.Canvas):
@@ -103,9 +106,17 @@ class Model(tk.Canvas):
     __gravity_acceleration: float
     __time_: float
     __tick: float
-    __resistance: float
+    __resistance: Vector
 
-    def __init__(self, model_size: tuple[int, int], tick: float = 0.001, gravity_acceleration: float = g, resistance: float = 0, *args, **kwargs):
+    def __init__(
+            self,
+            model_size: tuple[int, int],
+            tick: float = 0.001,
+            gravity_acceleration: float = g,
+            resistance: Vector = Vector(0, 0),
+            *args, **kwargs
+    ):
+
         super().__init__(*args, **kwargs)
         self.__width = model_size[0]
         self.__height = model_size[1]
@@ -114,7 +125,7 @@ class Model(tk.Canvas):
         self.__objects = []
         self.__gravity_acceleration = gravity_acceleration
 
-        self.__root = tk.Tk()
+        self.__root = ''
         self.__model = tk.Canvas()
 
         self.processing = True
@@ -136,12 +147,14 @@ class Model(tk.Canvas):
 
                     for other_obj in self.__objects:  # Проход по списку объектов
 
+                        if other_obj == obj:
+                            continue
+
                         if not self.check_coords(obj.coords, other_obj.coords):   # проверка координат объекта
                             obj.change_coords(self.__get_coord_vector(obj), self.time_)
-                            self.create_oval(*self.get_center(obj.coords), *[x + 1 for x in self.get_center(obj.coords)])
                         else:
                             obj.prepare_impact(other_obj, self.time_)
-
+                        self.create_oval(*self.get_center(obj.coords), *[x + 1 for x in self.get_center(obj.coords)])
                         if obj.coords[1] > self.__height or obj.coords[0] > self.__width or obj.coords[0] < 0 or obj.coords[3] < 0:
                             #self.delete_object(obj)
                             break
@@ -179,7 +192,7 @@ class Model(tk.Canvas):
         self.__objects.remove(obj)
         obj.delete()
 
-    def create_window(self, width: int = None, height: int = None, padding: str = tk.CENTER):
+    def create_window_(self, width: int = None, height: int = None, padding: str = tk.CENTER):
         """
         Создаёт основное окно.
 
@@ -233,12 +246,15 @@ class Model(tk.Canvas):
         return self.__gravity_acceleration
 
     @staticmethod
-    def check_coords(coords1: list | tuple[int, int, int, int], coords2: tuple[int, int, int, int]) -> bool:
+    def check_coords(coords1: list[int | float] | tuple[int | float, ...], coords2: list[int | float] | tuple[int | float, ...]) -> bool:
         """
         Проверяет координаты на предмет соприкосновения
         :return: True, если нижняя часть coords1 соприкасается с верхней частью coords2. False в любом другом случае.
         """
-        if 400 <= round(coords1[3]) <= 500:
+        # Проверка координат по x и y
+        if (((coords2[0] < coords1[0] < coords2[2]) or (coords2[0] < coords1[2] < coords2[2]))  # По x
+            and
+            ((coords2[1] < coords1[1] < coords2[3]) or (coords2[1] < coords1[3] < coords2[3]))):  # По y
             return True
         return False
 

@@ -4,7 +4,7 @@ import model as mdl
 from physics_objects import Vector
 from threading import Thread
 import time
-
+from base import plu_g, jup_g
 
 def force_(obj):
     obj.forces.append(Vector(-1000, -5000))
@@ -48,14 +48,15 @@ if __name__ == '__main__':
     root.geometry(f"{width}x{height}+{width // 2}+{height // 2}")
     root.title('Тестирование модели')
 
-    model = mdl.Model(model_size=(width, height), resistance=0, tick=0.001, gravity_acceleration=0.5)
+    model = mdl.Model(model_size=(width, height), resistance=Vector(0, 0), tick=0.001, gravity_acceleration=plu_g)
     model.place(x=0, y=0, width=width, height=height)
 
-    model.add_object(mdl.Object, model.create_rectangle(0, height - 50, width, height - 49, fill='Black'), 2)
+    model.add_object(mdl.Object, model.create_rectangle(0, height - 250, width, height - 40, fill='Black'), 10)
 
-    a = model.add_object(mdl.MoveableObject, model.create_oval(width // 2, 0, width // 2 + 100, 100), weight=2)
-    b = model.add_object(mdl.MoveableObject, model.create_oval(width // 2 - 50, 0, width // 2 - 25, 100), weight=1)
-    c = model.add_object(mdl.MoveableObject, model.create_oval(width // 2 + 150, 0, width // 2 + 175, 100), weight=5)
+    b = model.add_object(mdl.MoveableObject, model.create_oval(width // 2, 101, width // 2 + 10, 120), weight=5)
+    a = model.add_object(mdl.MoveableObject, model.create_oval(width // 2, 0, width // 2 + 100, 100), weight=1.1)
+
+
 
     window = TestWindow(model)
     window.geometry(f'500x500')

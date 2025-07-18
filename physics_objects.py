@@ -43,9 +43,14 @@ class Force(Vector):
     :param obj: объект, на который действует сила.
     :param time_: время (мс) действия силы на объект. Если меньше 2 - действует бесконечно.
     """
-    from model import Object
 
-    def __init__(self, x: float, y: float, obj: Object, time_: int = 2): # Т.к. 2 мс - минимальное время для обработки силы движком
+    def __init__(self, x: float, y: float, obj, time_: int = 2): # Т.к. 2 мс - минимальное время для обработки силы движком
         super().__init__(x, y)
-        if time_ >= 2:
-            obj.model.after(time_, obj.stop_force)
+        self.__obj = obj
+        self.__time = time_
+        if time_ >= 1:
+            obj.model.after(time_, lambda: obj.stop_force(self))
+
+    def __neg__(self):
+        return Force(-self.x, -self.y, self.__obj, self.__time)
+
