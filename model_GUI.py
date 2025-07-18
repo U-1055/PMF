@@ -5,10 +5,10 @@ from physics_objects import Vector
 from threading import Thread
 import time
 
-def force_(obj):
-    obj.forces.append(Vector(10, 3))
-    root.after(150, lambda: obj.forces.pop(-1))
 
+def force_(obj):
+    obj.forces.append(Vector(-1000, -5000))
+    root.after(2, lambda: obj.forces.pop(-1))
 
 
 class TestWindow(Toplevel):
@@ -34,7 +34,6 @@ class TestWindow(Toplevel):
 
     def start(self):
         self.model.start_processing()
-        force_(self.model.objects[1])
 
     def __plot_data(self):
         for obj in self.model.objects:
@@ -49,19 +48,14 @@ if __name__ == '__main__':
     root.geometry(f"{width}x{height}+{width // 2}+{height // 2}")
     root.title('Тестирование модели')
 
-    model = mdl.Model(model_size=(width, height), resistance=0, tick=0.001)
+    model = mdl.Model(model_size=(width, height), resistance=0, tick=0.001, gravity_acceleration=0.5)
     model.place(x=0, y=0, width=width, height=height)
 
-    model.add_object(mdl.Object, model.create_rectangle(0, height, width, height + 1, fill='Black'), 2)
+    model.add_object(mdl.Object, model.create_rectangle(0, height - 50, width, height - 49, fill='Black'), 2)
 
     a = model.add_object(mdl.MoveableObject, model.create_oval(width // 2, 0, width // 2 + 100, 100), weight=2)
     b = model.add_object(mdl.MoveableObject, model.create_oval(width // 2 - 50, 0, width // 2 - 25, 100), weight=1)
     c = model.add_object(mdl.MoveableObject, model.create_oval(width // 2 + 150, 0, width // 2 + 175, 100), weight=5)
-
-
-  #  root.after(100, lambda : a.forces.clear())
-   # root.after(100, lambda: a.forces.append(Vector(1, -1)))
-  #  root.after(101, lambda: a.forces.clear())
 
     window = TestWindow(model)
     window.geometry(f'500x500')

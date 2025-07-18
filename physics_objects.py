@@ -32,3 +32,20 @@ class Vector:
 
     def __neg__(self):
         return Vector(-self.x, -self.y)
+
+
+class Force(Vector):
+    """
+    Сила. Является подклассом вектора, содержит дополнительный параметры obj и time_.
+
+    :param x: координаты вектора по Ox.
+    :param y: координаты вектора по Oy.
+    :param obj: объект, на который действует сила.
+    :param time_: время (мс) действия силы на объект. Если меньше 2 - действует бесконечно.
+    """
+    from model import Object
+
+    def __init__(self, x: float, y: float, obj: Object, time_: int = 2): # Т.к. 2 мс - минимальное время для обработки силы движком
+        super().__init__(x, y)
+        if time_ >= 2:
+            obj.model.after(time_, obj.stop_force)
