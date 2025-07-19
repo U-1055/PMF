@@ -34,6 +34,7 @@ class Vector:
         return Vector(-self.x, -self.y)
 
 
+
 class Force(Vector):
     """
     Сила. Является подклассом вектора, содержит дополнительный параметры obj и time_.
@@ -47,10 +48,24 @@ class Force(Vector):
     def __init__(self, x: float, y: float, obj, time_: int = 2): # Т.к. 2 мс - минимальное время для обработки силы движком
         super().__init__(x, y)
         self.__obj = obj
-        self.__time = time_
+        self.__time = int(time_)
+
         if time_ >= 1:
-            obj.model.after(time_, lambda: obj.stop_force(self))
+            obj.model.after(self.__time, lambda: obj.stop_force(self))
 
     def __neg__(self):
         return Force(-self.x, -self.y, self.__obj, self.__time)
 
+
+class SetList(set):
+
+    def __init__(self, *args):
+        super().__init__(*args)
+
+    def __getitem__(self, idx: int):
+        if idx < 0 or idx >= len(self):
+            raise IndexError
+
+        for i, value in enumerate(self):
+            if i == idx:
+                return value
