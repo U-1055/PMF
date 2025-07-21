@@ -1,10 +1,10 @@
 import tkinter
 from tkinter import Tk, Button, Toplevel, Frame
 import model as mdl
-from physics_objects import Vector
+from physics_objects import Vector, Force
 from threading import Thread
 import time
-from base import plu_g, jup_g
+from base import plu_g, jup_g, sun_g
 
 
 def force_(obj):
@@ -52,16 +52,10 @@ if __name__ == '__main__':
     model = mdl.Model(model_size=(width, height), resistance=Vector(0, 0), tick=0.001, gravity_acceleration=plu_g)
     model.place(x=0, y=0, width=width, height=height)
 
-    model.add_object(mdl.Object, model.create_rectangle(0, height - 20, width, height, fill='Black'), 1)
-    model.add_object(mdl.Object, model.create_rectangle(0, 0, width, 25, fill='Black'), 1)
+    model.add_object(mdl.Object, model.create_rectangle(0, 100, width, height), 1)
+    model.add_object(mdl.Object, model.create_rectangle(0, 0, width, 1, fill='Black'), 1)
 
     a = model.add_object(mdl.MoveableObject, model.create_rectangle(width // 2, 50, width // 2 + 100, 75), weight=1)
-    model.add_object(mdl.MoveableObject, model.create_rectangle(width // 2 + 101, 50, width // 2 + 201, 75), weight=1.1)
-    b = model.add_object(mdl.MoveableObject, model.create_rectangle(width // 2 + 203, 50, width // 2 + 303, 75), weight=1.1)
-    a.forces.add(Vector(10, 0))
-    b.forces.add(Vector(-10, 0))
-    root.after(1, a.forces.pop)
-    root.after(1, b.forces.pop)
 
     window = TestWindow(model)
     window.geometry(f'500x500')

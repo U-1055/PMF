@@ -34,7 +34,6 @@ class Vector:
         return Vector(-self.x, -self.y)
 
 
-
 class Force(Vector):
     """
     Сила. Является подклассом вектора, содержит дополнительный параметры obj и time_.
@@ -45,7 +44,7 @@ class Force(Vector):
     :param time_: время (мс) действия силы на объект. Если меньше 2 - действует бесконечно.
     """
 
-    def __init__(self, x: float, y: float, obj, time_: int = 2): # Т.к. 2 мс - минимальное время для обработки силы движком
+    def __init__(self, x: float, y: float, obj, time_: int = 2):  #Т.к. 2 мс - минимальное время для обработки силы движком
         super().__init__(x, y)
         self.__obj = obj
         self.__time = int(time_)

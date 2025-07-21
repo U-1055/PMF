@@ -34,12 +34,10 @@ class Object:
 
     def stop_force(self, force: Force):
         """Прекращает действие силы на объект (удаляет эту силу из списка)"""
-        print(self.id)
         try:
             self.forces.remove(force)
         except KeyError:
             pass
-        del force
 
     def get_res_force(self) -> Vector:
         """Возвращает векторную сумму сил, действующих на объект"""
@@ -99,13 +97,6 @@ class MoveableObject(Object):
             center_coords = self.model.get_center(self.coords)
             self.model.create_oval(*center_coords, *(coord + 1 for coord in center_coords))
 
-    def lower_(self, points: int):
-        """Сдвигает объект вниз на points точек"""
-        coords = self.coords
-        coords[1] += points
-        coords[3] += points
-        self.model.coords(self.id, *coords)
-
     def plot_data(self):
         pl.plot(self.times, self.speeds)
         pl.show()
@@ -122,13 +113,11 @@ class MoveableObject(Object):
 
         if force.x == 0 and force.y == 0:
             return
-        if len(self.forces) > 2:
-            return
 
         obj2.forces.add(Force(force.x, force.y, obj2, self.model.tick * 1000 * 2))  # * 1000,  т.к. tick - с, а Force принимает в мс (1 с = 1000 мс)
         obj2_res_force = -obj2.get_res_force()
 
-        self.forces.add(Force(obj2_res_force.x, obj2_res_force.y, self, self.model.tick * 1000 * 2))
+        self.forces.add(Force(-force.x, -force.y, self, -1))
 
         self.change_coords(time_)
 
@@ -188,7 +177,7 @@ class Model(tk.Canvas):
                             obj.change_coords(self.time_)
 
                         if obj.coords[1] > self.__height or obj.coords[0] > self.__width or obj.coords[0] < 0 or obj.coords[3] < 0:
-                           # self.delete_object(obj)
+                            pass
                             break
                 self.time_ += self.__tick
 
