@@ -1,12 +1,23 @@
+import math
+
 
 class Vector:
-
+    """
+    Вектор. Поддерживает умножение вектора на скаляр, умножение вектора на вектор, сложение/вычитание векторов,
+    покомпонентное деление.
+    :param x: координаты вектора по Ox.
+    :param y: координаты вектора по Oy.
+    """
     x: float
     y: float
 
     def __init__(self, x: float, y: float):
         self.x = x
         self.y = y
+
+    @property
+    def length(self) -> float:
+        return math.sqrt(self.x ** 2 + self.y ** 2)
 
     def __add__(self, other):
         new_x = self.x + other.x
@@ -32,6 +43,12 @@ class Vector:
 
     def __neg__(self):
         return Vector(-self.x, -self.y)
+
+    def __truediv__(self, other: float | int):
+        if isinstance(other, int) or isinstance(other, float):
+            return Vector(self.x / other, self.y / other)
+        else:
+            raise TypeError(f'unsupported operand type {type(other)}')
 
 
 class Force(Vector):

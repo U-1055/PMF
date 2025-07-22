@@ -42,7 +42,7 @@ class Object:
     def get_res_force(self) -> Vector:
         """Возвращает векторную сумму сил, действующих на объект"""
         result_force = Vector(0, 0)
-        for force in self.forces:
+        for force in list(self.forces):
             result_force += force
 
         return result_force
@@ -59,7 +59,14 @@ class MoveableObject(Object):
     tracing: bool
     __impact_callback: Callable
 
-    def __init__(self, model: tk.Canvas, id_: int, weight: float = 1, tracing: bool = True, impact_callback: Callable = lambda: None):
+    def __init__(
+            self,
+            model: tk.Canvas,
+            id_: int, weight: float = 1,
+            tracing: bool = True,
+            impact_callback: Callable = lambda obj1, obj2: None
+    ):
+
         super().__init__(model, id_, weight=weight)
         self.speed = Vector(0, 0)
         self.acceleration = Vector(0, 0)
@@ -78,7 +85,7 @@ class MoveableObject(Object):
 
         force = self.get_res_force()
 
-        self.acceleration = Vector(force.x / self.weight, force.y / self.weight)  # F=ma -> a = F/m
+        self.acceleration = Vector(force.x / self.weight, force.y / self.weight)   # F=ma -> a = F/m
         self.speed = self.acceleration * self.model.tick + self.speed  # V = V0 + a*dt
 
         self.coords[0] += self.speed[0]
@@ -109,17 +116,18 @@ class MoveableObject(Object):
 
     def prepare_impact(self, obj2: 'Object', time_: float):
         """Стандартная функция обработки столкновений"""
-        force = self.acceleration * self.weight
+        self.forced = True
+        force = self.weight * self.speed / self.model.tick  # ToDo: разобраться, почему работает формула F = m*V/dt
 
-        if force.x == 0 and force.y == 0:
-            return
-
-        obj2.forces.add(Force(force.x, force.y, obj2, self.model.tick * 1000 * 2))  # * 1000,  т.к. tick - с, а Force принимает в мс (1 с = 1000 мс)
-        obj2_res_force = -obj2.get_res_force()
-
-        self.forces.add(Force(-force.x, -force.y, self, -1))
+        obj2.forces.add(Force(force.x, force.y, obj2, self.model.tick * 1500))  # * 1000,  т.к. tick - с, а Force принимает в мс (1 с = 1000 мс)
+        self.forces.add(Force(-force.x, -force.y, self, self.model.tick * 1500))
 
         self.change_coords(time_)
+
+        if isinstance(obj2, MoveableObject):
+            obj2.change_coords(time_)
+
+        self.__impact_callback(self, obj2)
 
 
 class Model(tk.Canvas):
@@ -149,6 +157,7 @@ class Model(tk.Canvas):
 
         self.__root = ''
         self.__model = tk.Canvas()
+        self.__updating_rate = 0
 
         self.processing = True
         thr = Thread(target=self.__event_loop)
@@ -166,6 +175,7 @@ class Model(tk.Canvas):
             for obj in self.__objects:  # Проход по списку объектов
 
                 if isinstance(obj, MoveableObject):  # Проверка на подвижность объекта
+                    is_impact = False  # Было ли столкновение
                     for other_obj in self.__objects:  # Проход по списку объектов
 
                         if other_obj == obj:
@@ -173,13 +183,16 @@ class Model(tk.Canvas):
 
                         if self.check_coords(obj.coords, other_obj.coords):   # проверка на столкновение
                             obj.prepare_impact(other_obj, self.time_)
-                        else:
-                            obj.change_coords(self.time_)
+                            is_impact = True
 
                         if obj.coords[1] > self.__height or obj.coords[0] > self.__width or obj.coords[0] < 0 or obj.coords[3] < 0:
                             pass
                             break
-                self.time_ += self.__tick
+
+                    if not is_impact:  # Если столкновения не было - переместить объект
+                        obj.change_coords(self.time_)
+
+            self.time_ += self.__tick
 
     def add_object(self, obj_type, obj_id: int, weight: float = 1) -> Object:
         """
@@ -261,6 +274,10 @@ class Model(tk.Canvas):
     @property
     def tick(self) -> float:
         return self.__tick
+
+    @property
+    def updating_rate(self) -> int:
+        return self.__updating_rate
 
     @staticmethod
     def check_coords(coords1: list[int | float] | tuple[int | float, ...], coords2: list[int | float] | tuple[int | float, ...]) -> bool:
