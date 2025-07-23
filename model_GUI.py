@@ -108,7 +108,11 @@ if __name__ == '__main__':
     model.add_object(mdl.Object, model.create_rectangle(0, 0, 25, height, fill='Black'), 1)
 
     a = model.add_object(mdl.MoveableObject, model.create_rectangle(50, 50, 100, 75), weight=1)
-    #b = model.add_object(mdl.MoveableObject, model.create_rectangle((width - 100, 50, width // 2 + 100, 150)), weight=1)
+    b = model.add_object(mdl.MoveableObject, model.create_rectangle((width - 100, 50, width // 2 + 100, 150)), weight=1)
+    c = model.add_object(mdl.MoveableObject, model.create_rectangle((55, 100, 75, 149)), weight=1)
+    model.add_object(mdl.MoveableObject, model.create_rectangle(width - 102, 25, width // 2 + 102, 49), weight=1)
+
+   # c.forces.add(Vector(-1, -5))
 
     window = TestWindow(model)
     window.geometry(f'500x500')

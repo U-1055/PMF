@@ -50,6 +50,14 @@ class Vector:
         else:
             raise TypeError(f'unsupported operand type {type(other)}')
 
+    def __str__(self):
+        return f'({self.x}, {self.y})'
+
+    def project(self, other: 'Vector') -> None or 'Vector':
+        """Возвращает геометрическую проекцию вектора экземпляра класса на переданный вектор."""
+        if other.length == 0:
+            return None
+        return ((self * other) / other.length) * other
 
 class Force(Vector):
     """

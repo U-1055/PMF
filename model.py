@@ -81,18 +81,15 @@ class MoveableObject(Object):
 
         self.forced = False
 
-    def change_coords(self, time_: float):
+    def prepare_movement(self, time_: float):
+        """Обрабатывает перемещение тела"""
 
         force = self.get_res_force()
 
         self.acceleration = Vector(force.x / self.weight, force.y / self.weight)   # F=ma -> a = F/m
         self.speed = self.acceleration * self.model.tick + self.speed  # V = V0 + a*dt
 
-        self.coords[0] += self.speed[0]
-        self.coords[1] += self.speed[1]
-        self.coords[2] += self.speed[0]
-        self.coords[3] += self.speed[1]
-        self.model.coords(self.id, *self.coords)
+        self._change_coords(self.speed)
 
         self.speeds.append(self.speed.y)
         self.accelerations.append(self.acceleration.y)
@@ -104,6 +101,19 @@ class MoveableObject(Object):
             center_coords = self.model.get_center(self.coords)
             self.model.create_oval(*center_coords, *(coord + 1 for coord in center_coords))
 
+    def _change_coords(self, changing: Vector | tuple[float, float] | list[float]):
+        """
+        Изменяет координаты объекта
+        :param changing: вектор или последовательность из двух элементов x и y,
+                         где x - изменение координат по Ox, y - по Oy.
+        """
+        self.coords[0] += changing[0]
+        self.coords[1] += changing[1]
+        self.coords[2] += changing[0]
+        self.coords[3] += changing[1]
+
+        self.model.coords(self.id, *self.coords)  # Изменение отрисовки на canvas
+
     def plot_data(self):
         pl.plot(self.times, self.speeds)
         pl.show()
@@ -114,7 +124,7 @@ class MoveableObject(Object):
         pl.plot(self.times, self.res_forces_y)
         pl.show()
 
-    def prepare_impact(self, obj2: 'Object', time_: float):
+    def prepare_impact(self, obj2: 'Object', time_: float, penetration_depth: Vector):
         """Стандартная функция обработки столкновений"""
         self.forced = True
         force = self.weight * self.speed / self.model.tick  # ToDo: разобраться, почему работает формула F = m*V/dt
@@ -122,10 +132,17 @@ class MoveableObject(Object):
         obj2.forces.add(Force(force.x, force.y, obj2, self.model.tick * 1500))  # * 1000,  т.к. tick - с, а Force принимает в мс (1 с = 1000 мс)
         self.forces.add(Force(-force.x, -force.y, self, self.model.tick * 1500))
 
-        self.change_coords(time_)
+        self.prepare_movement(time_)
+
+        projection = penetration_depth.project(self.speed)
+        if projection is not None:
+            self._change_coords(-projection)
 
         if isinstance(obj2, MoveableObject):
-            obj2.change_coords(time_)
+            obj2.prepare_movement(time_)
+
+            if projection is not None:
+                obj2._change_coords(projection)
 
         self.__impact_callback(self, obj2)
 
@@ -181,8 +198,10 @@ class Model(tk.Canvas):
                         if other_obj == obj:
                             continue
 
-                        if self.check_coords(obj.coords, other_obj.coords):   # проверка на столкновение
-                            obj.prepare_impact(other_obj, self.time_)
+                        checking_res = self.check_coords(obj.coords, other_obj.coords)
+
+                        if checking_res:   # проверка на столкновение
+                            obj.prepare_impact(other_obj, self.time_, checking_res)
                             is_impact = True
 
                         if obj.coords[1] > self.__height or obj.coords[0] > self.__width or obj.coords[0] < 0 or obj.coords[3] < 0:
@@ -190,7 +209,7 @@ class Model(tk.Canvas):
                             break
 
                     if not is_impact:  # Если столкновения не было - переместить объект
-                        obj.change_coords(self.time_)
+                        obj.prepare_movement(self.time_)
 
             self.time_ += self.__tick
 
@@ -280,16 +299,19 @@ class Model(tk.Canvas):
         return self.__updating_rate
 
     @staticmethod
-    def check_coords(coords1: list[int | float] | tuple[int | float, ...], coords2: list[int | float] | tuple[int | float, ...]) -> bool:
+    def check_coords(coords1: list[int | float] | tuple[int | float, ...], coords2: list[int | float] | tuple[int | float, ...]) -> bool | Vector:
         """
-        Проверяет координаты на предмет соприкосновения
-        :return: True, если нижняя часть coords1 соприкасается с верхней частью coords2. False в любом другом случае.
+        Проверяет координаты на пересечение.
+        :param coords1: координаты первого объекта (x1, y1, x2, y2)
+        :param coords2: координаты второго объекта (x3, y3, x4, y4)
+        :return False: если пересечения нет
+        :return Vector(x2 - x3, y2 - y3) | Vector(x4 - x1, y4 - y1): при пересечении (вектор является диагональю области пересечения)
         """
         # Проверка координат по x и y
-        if (((coords2[0] <= coords1[0] <= coords2[2]) or (coords2[0] <= coords1[2] <= coords2[2]))  # По x
-            and
-            ((coords2[1] <= coords1[1] <= coords2[3]) or (coords2[1] <= coords1[3] <= coords2[3]))):  # По y
-            return True
+        if (coords2[0] <= coords1[0] <= coords2[2]) and (coords2[1] <= coords1[1] <= coords2[3]):   # x1 <= x3 <= x2 & y1 <= y3 <= y2
+            return Vector(coords2[2] - coords1[0], coords2[3] - coords1[1])
+        if (coords2[0] <= coords1[2] <= coords2[2]) and (coords2[1] <= coords1[3] <= coords2[3]):  # x1 <= x4 <= x2 & y1 <= y4 <= y2
+            return Vector(coords1[2] - coords2[0], coords1[3] - coords1[0])
         return False
 
     @staticmethod
